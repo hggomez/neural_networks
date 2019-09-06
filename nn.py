@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
 import struct
 import numpy as np
 from itertools import chain
 from scipy.special import expit
+import gzip
 
 def sigmoid(x):
   return expit(x)
@@ -12,15 +14,12 @@ def sigmoid_prime(x):
 class NN(object):
 
   def __init__(self, sizes, activation_func, activation_func_derivative, debug=False):
-    #Uniform(0,1) distribution for weights and biases    
-    #self.weights = [np.random.uniform(size=(x,y)) for x,y in zip(sizes[1:], sizes[:-1])]
-    #self.biases = [np.random.uniform(size=(x,1)) for x in sizes[1:]]
-    #Normal(0,1) distribution for weights and
+    # Uniform(0,1) distribution for weights and biases    
+    # self.weights = [np.random.uniform(size=(x,y)) for x,y in zip(sizes[1:], sizes[:-1])]
+    # self.biases = [np.random.uniform(size=(x,1)) for x in sizes[1:]]
+    # Normal(0,1) distribution for weights and biases
     self.weights = [np.random.randn(x,y) for x,y in zip(sizes[1:], sizes[:-1])]
     self.biases = [np.random.randn(x,1) for x in sizes[1:]]
-    #Ones for the weights, zeros for the biases
-    #self.weights = [np.ones((x,y)) for x,y in zip(sizes[1:], sizes[:-1])]
-    #self.biases = [np.zeros((x,1)) for x in sizes[1:]]
     self.activation_func = activation_func
     self.activation_func_derivative = activation_func_derivative
 
@@ -72,11 +71,10 @@ class NN(object):
   def disable_debug(self):
     self.debug = False
 
-
-def load_data(images_file_path, labels_file_path):
-  with open(images_file_path, 'rb') as images_file:
+def load_mnist():
+  with gzip.open("./dataset/train-images-idx3-ubyte.gz") as images_file:
     images = parse_images(images_file)
-  with open(labels_file_path, 'rb') as labels_file:
+  with gzip.open("./dataset/train-labels-idx1-ubyte.gz") as labels_file:
     labels = parse_labels(labels_file)
   return zip(images, labels)
 
@@ -98,27 +96,10 @@ def parse_labels(labels_file):
     l_v.reshape((10,1))
   return labels_vectors
 
-
-#images = [np.array([0]*783 + [1]).reshape(784,1) for i in range(100)]
-#labels = [np.array([0]*9 + [1]).reshape(10,1) for i in range(100)]
-#data = list(zip(images, labels))
-
-#images = [np.array([1,0]).reshape(2,1),\
-#          np.array([1,1]).reshape(2,1),\
-#          np.array([0,1]).reshape(2,1),\
-#          np.array([0,0]).reshape(2,1)]
-#labels = [np.array([1]).reshape(1,1),\
-#          np.array([0]).reshape(1,1),\
-#          np.array([1]).reshape(1,1),\
-#          np.array([0]).reshape(1,1)]
-#data = list(zip(images,labels))
-
-
 nn = NN([784,16,16,10], sigmoid, sigmoid_prime, debug=False)
-data = list(load_data("./dataset/train_images", "./dataset/train_labels"))
+data = list(load_mnist())
 epochs = 1000
 for i in range(epochs):
   nn.update_weights(data[:1], 0.05)
-  if (i == 0 or i == epochs-1):
-    print("EPOCH N°: ", i)
-    print("Error", nn.mse(data))
+  print("EPOCH N°: ", i)
+  print("Error", nn.mse(data))
